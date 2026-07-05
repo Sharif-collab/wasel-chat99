@@ -1,63 +1,106 @@
-name: Build Android and iOS
-on:
-  push:
-    branches: [ main ]
+name: All Builds (Linux, macOS, Windows, Android, IPA, APK, AAB)
+      uses: actions/checkout@v4
 
-jobs:
-  build-android:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Setup Python
+    - name: Setup Python ${{ env.PYTHON_VERSION }}
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
-    - name: Install Dependencies
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Python Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    - name: Setup Flutter
+
+    - name: Setup Flutter ${{ env.FLUTTER_VERSION }}
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.22.0'
-    - name: Setup Java
-      uses: actions/setup-java@v4
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+
+    - name: Flet Build AAB
+      run: |
+        flutter config --no-analytics
+        flet build aab --verbose --build-number=$BUILD_NUMBER --build-version=$BUILD_VERSION
+
+    - name: Upload AAB Artifact
+      uses: actions/upload-artifact@v4.3.4
+      with:
+        name: aab-build-artifact
+        path: build/aab
+        if-no-files-found: warn
+        overwrite: false
+
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Python Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Setup Flutter ${{ env.FLUTTER_VERSION }}
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+
+    - name: Setup Java JDK
+      uses: actions/setup-java@v4.2.1
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '21'
+
     - name: Flet Build APK
       run: |
         flutter config --no-analytics
-        flet build apk --verbose
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
+        flet build apk --verbose --build-number=$BUILD_NUMBER --build-version=$BUILD_VERSION
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4.3.4
       with:
-        name: app-apk
+        name: apk-build-artifact
         path: build/apk
+        if-no-files-found: warn
+        overwrite: false
 
   build-ipa:
     runs-on: macos-latest
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup Python
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python ${{ env.PYTHON_VERSION }}
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
-    - name: Install Dependencies
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Python Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    - name: Setup Flutter
+
+    - name: Setup Flutter ${{ env.FLUTTER_VERSION }}
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.22.0'
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+
     - name: Flet Build IPA
       run: |
         flutter config --no-analytics
-        flet build ipa --verbose
-    - name: Upload IPA
-      uses: actions/upload-artifact@v4
+        flet build ipa --verbose --build-number=$BUILD_NUMBER --build-version=$BUILD_VERSION 
+
+    - name: Upload IPA Artifact
+      uses: actions/upload-artifact@v4.3.4
       with:
-        name: app-ipa
+        name: ipa-build-artifact
         path: build/ipa
-concurrency: 
+        if-no-files-found: warn
+        overwrite: fals
